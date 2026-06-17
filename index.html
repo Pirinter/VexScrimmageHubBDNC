@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VEX Robotics Scrimmage Hub</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configure Tailwind to support class-based dark mode switching
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <!-- FontAwesome for beautiful icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar matching active theme */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-50 dark:bg-[#090d16] text-slate-800 dark:text-slate-200 flex flex-col overflow-hidden transition-colors duration-200">
+
+    <header class="border-b border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950/40 shrink-0 transition-colors">
+        <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div id="sync-indicator-dot" class="w-2.5 h-2.5 rounded-full bg-slate-400 animate-pulse" title="Connecting to Live Sync..."></div>
+                <div>
+                    <h1 class="text-sm font-semibold tracking-wider text-slate-900 dark:text-white uppercase flex items-center gap-2">
+                        VEX Scrimmage Hub
+                        <span id="live-indicator" class="hidden text-[8px] font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-1 rounded-sm uppercase tracking-wider">Live</span>
+                    </h1>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest">Binh Duong Match Tracker</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <!-- Theme Toggle Button -->
+                <button onclick="toggleTheme()" id="theme-toggle-btn" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 p-2 rounded text-xs transition-colors flex items-center justify-center h-8 w-8" title="Toggle Light/Dark Theme">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:block"></i>
+                </button>
+
+                <!-- Admin Status Toggle -->
+                <button id="admin-toggle-btn" onclick="openAdminModal()" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 px-2.5 py-1.5 rounded text-xs transition-colors flex items-center gap-1.5 h-8">
+                    <i class="fa-solid fa-key text-[10px]"></i>
+                    <span class="hidden sm:inline">Admin Login</span>
+                </button>
+
+                <!-- Custom Reset Button (Only visible to authenticated Admins) -->
+                <button id="admin-reset-btn" onclick="openResetModal()" class="hidden text-red-500 dark:text-red-400 hover:text-red-600 border border-red-200 dark:border-red-950 bg-white dark:bg-slate-950 px-2.5 py-1.5 rounded text-xs transition-colors flex items-center gap-1.5 h-8">
+                    <i class="fa-solid fa-trash-can text-[10px]"></i>
+                    <span class="hidden sm:inline">Reset Event</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <nav class="border-b border-slate-200 dark:border-slate-900 bg-slate-100/50 dark:bg-slate-950/20 shrink-0 transition-colors">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="flex space-x-6 py-2 overflow-x-auto no-scrollbar">
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="nav-btn py-2 text-xs font-medium uppercase tracking-wider border-b-2 border-slate-800 dark:border-slate-300 text-slate-950 dark:text-white transition-all">
+                    Dashboard
+                </button>
+                <button onclick="switchTab('teams')" id="tab-teams" class="nav-btn py-2 text-xs font-medium uppercase tracking-wider border-b-2 border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all">
+                    Teams
+                </button>
+                <button onclick="switchTab('quals')" id="tab-quals" class="nav-btn py-2 text-xs font-medium uppercase tracking-wider border-b-2 border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all">
+                    Quals
+                </button>
+                <button onclick="switchTab('leaderboard')" id="tab-leaderboard" class="nav-btn py-2 text-xs font-medium uppercase tracking-wider border-b-2 border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all">
+                    Standings
+                </button>
+                <button onclick="switchTab('bracket')" id="tab-bracket" class="nav-btn py-2 text-xs font-medium uppercase tracking-wider border-b-2 border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all">
+                    Eliminations
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-6xl mx-auto space-y-8">
+
+            <!-- TAB: DASHBOARD -->
+            <section id="view-dashboard" class="tab-view space-y-8">
+                <!-- Flat Brief Banner -->
+                <div class="border border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 p-6 rounded transition-colors">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                        <div class="md:col-span-2 space-y-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-medium tracking-widest text-slate-400 dark:text-slate-500 uppercase">Friday Scrimmage Agenda</span>
+                                <span id="admin-badge" class="hidden text-[9px] font-mono bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900 px-1.5 py-0.5 rounded">Coordinator Mode</span>
+                            </div>
+                            <h2 class="text-lg font-medium text-slate-900 dark:text-white">4-Team Round-Robin friendly competition</h2>
+                            <p class="text-slate-500 dark:text-slate-400 text-xs leading-relaxed max-w-xl">
+                                Welcome Vung Tau and Saigon South teams to Binh Duong. Matches start at 10:00 AM. 
+                                The highest seeded team at 11:30 AM earns the priority pick during Alliance Selection, moving into a Best-of-3 Finals Series.
+                            </p>
+                        </div>
+                        <div class="border border-slate-200 dark:border-slate-900 bg-slate-50 dark:bg-slate-950/60 p-4 rounded space-y-3 transition-colors">
+                            <div class="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                                <span>Completion</span>
+                                <span id="progress-text" class="text-slate-700 dark:text-slate-300 font-mono">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-200 dark:bg-slate-900 h-1.5 rounded-full overflow-hidden">
+                                <div id="progress-bar" class="bg-slate-500 dark:bg-slate-400 h-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-center text-xs font-mono">
+                                <div class="bg-white dark:bg-slate-900/40 p-2 border border-slate-200 dark:border-slate-900 rounded transition-colors">
+                                    <span id="stat-quals-done" class="block text-slate-800 dark:text-slate-200">0/6</span>
+                                    <span class="text-[9px] uppercase text-slate-400 dark:text-slate-500">Quals</span>
+                                </div>
+                                <div class="bg-white dark:bg-slate-900/40 p-2 border border-slate-200 dark:border-slate-900 rounded transition-colors">
+                                    <span id="stat-current-leader" class="block text-amber-600 dark:text-amber-500 truncate">-</span>
+                                    <span class="text-[9px] uppercase text-slate-400 dark:text-slate-500">#1 Seed</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 space-y-4">
+                        <h3 class="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                            Active Match Station
+                        </h3>
+                        <div id="active-match-container" class="space-y-4">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Side Mini-standings Widget -->
+                    <div class="space-y-4">
+                        <h3 class="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                            Quick Standings
+                        </h3>
+                        <div class="space-y-2" id="dashboard-leaderboard">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: TEAMS -->
+            <section id="view-teams" class="tab-view hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-base font-semibold text-slate-900 dark:text-white uppercase tracking-wider">Registered Competitors</h2>
+                        <p class="text-xs text-slate-500">Rename or customize official Team IDs for the 4 slots.</p>
+                    </div>
+                    <button id="restore-teams-btn" onclick="restoreDefaultTeams()" class="hidden text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white border border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 px-3 py-1.5 rounded text-xs transition-colors">
+                        Restore Default Teams
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="teams-list-grid">
+                    <!-- Injected dynamically -->
+                </div>
+            </section>
+
+            <!-- TAB: QUALS -->
+            <section id="view-quals" class="tab-view hidden space-y-6">
+                <div>
+                    <h2 class="text-base font-semibold text-slate-900 dark:text-white uppercase tracking-wider">Qualifications Grid</h2>
+                    <p class="text-xs text-slate-500">Every team receives exactly 3 matches in the Round-Robin phase.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="qual-matches-grid">
+                    <!-- Injected dynamically -->
+                </div>
+            </section>
+
+            <!-- TAB: STANDINGS (LEADERBOARD) -->
+            <section id="view-leaderboard" class="tab-view hidden space-y-6">
+                <div>
+                    <h2 class="text-base font-semibold text-slate-900 dark:text-white uppercase tracking-wider">Event Standings</h2>
+                    <p class="text-xs text-slate-500">Rankings updated automatically using VEX ruleset tiebreakers.</p>
+                </div>
+
+                <div class="border border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 rounded overflow-hidden transition-colors">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-100 dark:bg-slate-900/40 text-[10px] uppercase tracking-wider text-slate-500 border-b border-slate-200 dark:border-slate-900 transition-colors">
+                                <th class="p-4 text-center w-16">Rank</th>
+                                <th class="p-4">Team</th>
+                                <th class="p-4 text-center">W - L - T</th>
+                                <th class="p-4 text-center text-slate-800 dark:text-slate-300 font-medium">Win Pts (WP)</th>
+                                <th class="p-4 text-center">AWP</th>
+                                <th class="p-4 text-center">Auto (AP)</th>
+                                <th class="p-4 text-center">Opponent (OS)</th>
+                                <th class="p-4 text-center">Cumulative Pts</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-tbody" class="divide-y divide-slate-200 dark:divide-slate-900">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Simplified Tiebreakers Legend -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 text-xs text-slate-400 dark:text-slate-500 border-t border-slate-200 dark:border-slate-900 transition-colors">
+                    <div>
+                        <span class="font-medium text-slate-700 dark:text-slate-400 block mb-1">1. Win Points (WP)</span>
+                        Standard allocation: 2 WP for a win, 1 WP for a tie, 0 WP for a loss. Plus 1 WP for Autonomous Win Point (AWP).
+                    </div>
+                    <div>
+                        <span class="font-medium text-slate-700 dark:text-slate-400 block mb-1">2. Autonomous Points (AP)</span>
+                        Primary tiebreaker. Winning the autonomous phase awards 10 AP, ties award 5 AP.
+                    </div>
+                    <div>
+                        <span class="font-medium text-slate-700 dark:text-slate-400 block mb-1">3. Opponent Score (OS)</span>
+                        Secondary tiebreaker (Strength of Schedule). Represents cumulative scores accumulated by the opposing alliances.
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: ELIMINATIONS & ALLIANCE -->
+            <section id="view-bracket" class="tab-view hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Alliance Selection Column -->
+                    <div class="lg:col-span-1 border border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 p-6 rounded space-y-4 transition-colors">
+                        <div>
+                            <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">Alliance Phase</span>
+                            <h2 class="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider">Alliance Selection</h2>
+                            <p class="text-xs text-slate-500">Run at 12:10 PM. Top seed selects a partner from the remaining 3 teams.</p>
+                        </div>
+                        <div id="alliance-setup-container" class="space-y-4">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Bracket Column -->
+                    <div class="lg:col-span-2 border border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 p-6 rounded space-y-6 transition-colors">
+                        <div>
+                            <h2 class="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider">Best-of-3 Finals Series</h2>
+                            <p class="text-xs text-slate-500">Alliance 1 vs Alliance 2 championship playoff matches.</p>
+                        </div>
+                        <div id="finals-bracket-container" class="space-y-4">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- ADMIN LOGIN MODAL -->
+    <div id="admin-modal" class="fixed inset-0 bg-slate-950/80 dark:bg-slate-950/90 backdrop-blur-sm hidden items-center justify-center p-4 z-50 transition-colors">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded w-full max-w-sm shadow-2xl overflow-hidden transition-colors">
+            <div class="border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between transition-colors">
+                <div>
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-900 dark:text-white">Admin Authentication</h3>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">Unlock score edits</p>
+                </div>
+                <button onclick="closeAdminModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Log in with the coordinator credentials to edit scores, update match lineups, or reset standings.
+                </p>
+                <div class="space-y-1.5">
+                    <label for="admin-password" class="block text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        Admin Password (Default: <span class="text-slate-800 dark:text-slate-300 font-mono">admin123</span>)
+                    </label>
+                    <input type="password" id="admin-password" placeholder="••••••••" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded py-1.5 px-3 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-red-500 transition-colors">
+                    <p id="admin-error-msg" class="text-[10px] text-red-500 dark:text-red-400 hidden mt-1">
+                        <i class="fa-solid fa-circle-exclamation mr-1"></i> Incorrect password. Please try again.
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between transition-colors">
+                <button type="button" onclick="closeAdminModal()" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-300 text-[10px] uppercase font-medium">
+                    Cancel
+                </button>
+                <button type="button" onclick="submitAdminLogin()" class="bg-slate-800 dark:bg-slate-200 hover:bg-slate-900 dark:hover:bg-white text-white dark:text-slate-950 px-4 py-1.5 rounded text-[10px] font-semibold uppercase tracking-wider transition-all">
+                    Login
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCORE MODAL -->
+    <div id="score-modal" class="fixed inset-0 bg-slate-950/80 dark:bg-slate-950/90 backdrop-blur-sm hidden items-center justify-center p-4 z-50 transition-colors">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded w-full max-w-lg shadow-2xl overflow-hidden transition-colors">
+            <div class="border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between transition-colors">
+                <div>
+                    <h3 id="modal-match-title" class="text-xs font-semibold uppercase tracking-wider text-slate-900 dark:text-white">Score Entry</h3>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">Edit match details</p>
+                </div>
+                <button onclick="closeScoreModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-6">
+                <!-- Red vs Blue Score Fields -->
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Red Side -->
+                    <div class="space-y-3 p-3 bg-red-50 dark:bg-red-950/10 border border-red-100 dark:border-red-950/25 rounded transition-colors">
+                        <span id="modal-red-team-labels" class="text-[10px] font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider block">Red Alliance</span>
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Score</label>
+                            <input type="number" id="input-red-score" min="0" value="0" class="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded py-1 px-2.5 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-red-500 dark:focus:border-red-800 transition-colors">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="input-red-awp" class="h-3 w-3 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-800 rounded text-red-600 focus:ring-red-500">
+                            <label for="input-red-awp" class="text-[9px] uppercase text-slate-500 dark:text-slate-400">Award AWP (+1 WP)</label>
+                        </div>
+                    </div>
+
+                    <!-- Blue Side -->
+                    <div class="space-y-3 p-3 bg-blue-50 dark:bg-blue-950/10 border border-blue-100 dark:border-blue-950/25 rounded transition-colors">
+                        <span id="modal-blue-team-labels" class="text-[10px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider block">Blue Alliance</span>
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Score</label>
+                            <input type="number" id="input-blue-score" min="0" value="0" class="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded py-1 px-2.5 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-800 transition-colors">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="input-blue-awp" class="h-3 w-3 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-800 rounded text-blue-600 focus:ring-blue-500">
+                            <label for="input-blue-awp" class="text-[9px] uppercase text-slate-500 dark:text-slate-400">Award AWP (+1 WP)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Auto Winner Selection -->
+                <div class="space-y-2">
+                    <label class="block text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400">Autonomous Winner (+10 AP)</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" onclick="setModalAutoWinner('red')" id="auto-btn-red" class="border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 py-1.5 rounded text-[10px] font-medium tracking-wide transition-colors">
+                            Red Alliance
+                        </button>
+                        <button type="button" onclick="setModalAutoWinner('blue')" id="auto-btn-blue" class="border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 py-1.5 rounded text-[10px] font-medium tracking-wide transition-colors">
+                            Blue Alliance
+                        </button>
+                        <button type="button" onclick="setModalAutoWinner('tie')" id="auto-btn-tie" class="border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 py-1.5 rounded text-[10px] font-medium tracking-wide transition-colors">
+                            Tie / Split (+5 AP)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Controls -->
+            <div class="bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between transition-colors">
+                <button type="button" onclick="closeScoreModal()" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-300 text-[10px] uppercase font-medium">
+                    Cancel
+                </button>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="modal-clear-match-btn" class="border border-red-200 dark:border-red-950 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-600 dark:text-red-400 px-3 py-1.5 rounded text-[10px] font-medium transition-all">
+                        Clear Score
+                    </button>
+                    <button type="button" id="modal-save-btn" class="bg-slate-800 dark:bg-slate-200 hover:bg-slate-900 dark:hover:bg-white text-white dark:text-slate-950 px-4 py-1.5 rounded text-[10px] font-semibold uppercase tracking-wider transition-all">
+                        Save Results
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESET MODAL -->
+    <div id="reset-modal" class="fixed inset-0 bg-slate-950/80 dark:bg-slate-950/90 backdrop-blur-sm hidden items-center justify-center p-4 z-50 transition-colors">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded w-full max-w-sm shadow-2xl overflow-hidden transition-colors">
+            <div class="border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between transition-colors">
+                <div>
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-900 dark:text-white">Reset Tournament</h3>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">Authorization Required</p>
+                </div>
+                <button onclick="closeResetModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    This action will clear all qualification results, custom team identifiers, and playoff brackets.
+                </p>
+                <div class="space-y-1.5">
+                    <label for="reset-password" class="block text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        Admin Password (Try: <span class="text-slate-800 dark:text-slate-300 font-mono">admin123</span>)
+                    </label>
+                    <input type="password" id="reset-password" placeholder="••••••••" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded py-1.5 px-3 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-red-500 transition-colors">
+                    <p id="reset-error-msg" class="text-[10px] text-red-500 dark:text-red-400 hidden mt-1">
+                        <i class="fa-solid fa-circle-exclamation mr-1"></i> Incorrect password. Please try again.
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between transition-colors">
+                <button type="button" onclick="closeResetModal()" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-300 text-[10px] uppercase font-medium">
+                    Cancel
+                </button>
+                <button type="button" onclick="submitReset()" class="bg-red-600 hover:bg-red-500 text-white px-4 py-1.5 rounded text-[10px] font-semibold uppercase tracking-wider transition-all">
+                    Reset All Data
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Modular SDK Scripts -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- PLATFORM ENVS AND FIREBASE FALLBACKS ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'vex-scrimmage-bd';
+        
+        // Use provided configuration dynamically or fallback to local memory config if testing locally
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : {
+                apiKey: "",
+                authDomain: "vex-scrimmage-bd.firebaseapp.com",
+                projectId: "vex-scrimmage-bd",
+                storageBucket: "vex-scrimmage-bd.appspot.com",
+                messagingSenderId: "1234567890",
+                appId: "1:1234567890:web:abcdef123456"
+              };
+
+        // Initialize SDK Modules
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- LOCAL STATE SCHEMA ---
+        const defaultTeams = [
+            { id: "A", name: "Vung Tau", idString: "VT-01" },
+            { id: "B", name: "Saigon South", idString: "SS-02" },
+            { id: "C", name: "Binh Duong 1 (Host)", idString: "BD-01" },
+            { id: "D", name: "Binh Duong 2 (Host)", idString: "BD-02" }
+        ];
+
+        const qualScheduleTemplate = [
+            { id: 1, red: ["A", "B"], blue: ["C", "D"], time: "10:00 AM" },
+            { id: 2, red: ["A", "C"], blue: ["B", "D"], time: "10:15 AM" },
+            { id: 3, red: ["A", "D"], blue: ["B", "C"], time: "10:30 AM" },
+            { id: 4, red: ["C", "D"], blue: ["A", "B"], time: "10:45 AM" },
+            { id: 5, red: ["B", "D"], blue: ["A", "C"], time: "11:00 AM" },
+            { id: 6, red: ["B", "C"], blue: ["A", "D"], time: "11:15 AM" }
+        ];
+
+        let state = {
+            teams: JSON.parse(JSON.stringify(defaultTeams)),
+            quals: qualScheduleTemplate.map(match => ({
+                ...match,
+                scoreRed: null,
+                scoreBlue: null,
+                redAwp: false,
+                blueAwp: false,
+                autoWinner: null
+            })),
+            allianceSelection: {
+                completed: false,
+                alliances: []
+            },
+            finals: [
+                { id: 1, title: "Finals Match 1", scoreRed: null, scoreBlue: null, autoWinner: null, time: "12:20 PM" },
+                { id: 2, title: "Finals Match 2", scoreRed: null, scoreBlue: null, autoWinner: null, time: "12:40 PM" },
+                { id: 3, title: "Finals Match 3 (If Needed)", scoreRed: null, scoreBlue: null, autoWinner: null, time: "01:00 PM" }
+            ],
+            theme: 'dark'
+        };
+
+        let user = null;
+        let isAdmin = false; // Tracks client-side coordinator status to show/hide edit options
+        let unsubscribeFirestore = null;
+
+        // --- AUTHENTICATION INIT (Rule 3) ---
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Auth Failure:", error);
+                showNotification("Could not authenticate. Retrying...", "error");
+            }
+        };
+
+        onAuthStateChanged(auth, (u) => {
+            user = u;
+            if (u) {
+                document.getElementById('sync-indicator-dot').className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+                document.getElementById('live-indicator').classList.remove('hidden');
+                setupFirestoreSubscription();
+            } else {
+                document.getElementById('sync-indicator-dot').className = "w-2.5 h-2.5 rounded-full bg-red-500";
+                document.getElementById('live-indicator').classList.add('hidden');
+            }
+        });
+
+        initAuth();
+
+        // --- FIRESTORE SUBSCRIPTION ENGINE (Rules 1 & 2) ---
+        function setupFirestoreSubscription() {
+            if (unsubscribeFirestore) unsubscribeFirestore();
+
+            // Strict collection compliance rule path
+            const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'scrimmage_state');
+
+            unsubscribeFirestore = onSnapshot(stateDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const cloudData = docSnap.data();
+                    state.teams = cloudData.teams || defaultTeams;
+                    state.quals = cloudData.quals || [];
+                    state.allianceSelection = cloudData.allianceSelection || { completed: false, alliances: [] };
+                    state.finals = cloudData.finals || [];
+                    renderAll();
+                } else {
+                    // Initialize empty cloud database if it doesn't exist
+                    pushStateToCloud();
+                }
+            }, (error) => {
+                console.error("Database access error: ", error);
+                showNotification("Database read restricted.", "error");
+            });
+        }
+
+        async function pushStateToCloud() {
+            if (!user) return;
+            const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'scrimmage_state');
+            try {
+                await setDoc(stateDocRef, {
+                    teams: state.teams,
+                    quals: state.quals,
+                    allianceSelection: state.allianceSelection,
+                    finals: state.finals
+                });
+            } catch (error) {
+                console.error("Failed to write state: ", error);
+                showNotification("Error: Sync failed. Make sure you are logged in.", "error");
+            }
+        }
+
+        // --- CORE ACTION CONTROLS (ADMIN MODES) ---
+        function checkAdminSession() {
+            const savedAdmin = localStorage.getItem("scrim_admin_session");
+            if (savedAdmin === "true") {
+                setAdminMode(true);
+            } else {
+                setAdminMode(false);
+            }
+        }
+
+        function setAdminMode(active) {
+            isAdmin = active;
+            const adminBtn = document.getElementById('admin-toggle-btn');
+            const resetBtn = document.getElementById('admin-reset-btn');
+            const adminBadge = document.getElementById('admin-badge');
+            const restoreBtn = document.getElementById('restore-teams-btn');
+
+            if (active) {
+                localStorage.setItem("scrim_admin_session", "true");
+                adminBtn.innerHTML = `<i class="fa-solid fa-lock text-[10px]"></i> <span class="hidden sm:inline">Logout Admin</span>`;
+                adminBtn.onclick = logoutAdmin;
+                resetBtn.classList.remove('hidden');
+                adminBadge.classList.remove('hidden');
+                if (restoreBtn) restoreBtn.classList.remove('hidden');
+            } else {
+                localStorage.removeItem("scrim_admin_session");
+                adminBtn.innerHTML = `<i class="fa-solid fa-key text-[10px]"></i> <span class="hidden sm:inline">Admin Login</span>`;
+                adminBtn.onclick = openAdminModal;
+                resetBtn.classList.add('hidden');
+                adminBadge.classList.add('hidden');
+                if (restoreBtn) restoreBtn.classList.add('hidden');
+            }
+            renderAll();
+        }
+
+        function openAdminModal() {
+            document.getElementById('admin-password').value = '';
+            document.getElementById('admin-error-msg').classList.add('hidden');
+            const modal = document.getElementById('admin-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeAdminModal() {
+            const modal = document.getElementById('admin-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function submitAdminLogin() {
+            const val = document.getElementById('admin-password').value;
+            if (val === 'admin123') {
+                setAdminMode(true);
+                closeAdminModal();
+                showNotification("Authorized successfully as Coordinator.", "success");
+            } else {
+                document.getElementById('admin-error-msg').classList.remove('hidden');
+            }
+        }
+
+        function logoutAdmin() {
+            setAdminMode(false);
+            showNotification("Logged out of Admin Mode.", "info");
+        }
+
+        // Theme management cached locally
+        function toggleTheme() {
+            const newTheme = state.theme === 'dark' ? 'light' : 'dark';
+            state.theme = newTheme;
+            localStorage.setItem("vex_theme", newTheme);
+            applyTheme(newTheme);
+        }
+
+        function applyTheme(theme) {
+            const htmlEl = document.documentElement;
+            if (theme === 'dark') {
+                htmlEl.classList.add('dark');
+            } else {
+                htmlEl.classList.remove('dark');
+            }
+        }
+
+        // Central Wiping engine
+        function openResetModal() {
+            document.getElementById('reset-password').value = '';
+            document.getElementById('reset-error-msg').classList.add('hidden');
+            const modal = document.getElementById('reset-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeResetModal() {
+            const modal = document.getElementById('reset-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function submitReset() {
+            const pwdInput = document.getElementById('reset-password').value;
+            const errorElement = document.getElementById('reset-error-msg');
+            
+            if (pwdInput === "admin123") {
+                state.teams = JSON.parse(JSON.stringify(defaultTeams));
+                state.quals = qualScheduleTemplate.map(match => ({
+                    ...match,
+                    scoreRed: null,
+                    scoreBlue: null,
+                    redAwp: false,
+                    blueAwp: false,
+                    autoWinner: null
+                }));
+                state.allianceSelection = {
+                    completed: false,
+                    alliances: []
+                };
+                state.finals = [
+                    { id: 1, title: "Finals Match 1", scoreRed: null, scoreBlue: null, autoWinner: null, time: "12:20 PM" },
+                    { id: 2, title: "Finals Match 2", scoreRed: null, scoreBlue: null, autoWinner: null, time: "12:40 PM" },
+                    { id: 3, title: "Finals Match 3 (If Needed)", scoreRed: null, scoreBlue: null, autoWinner: null, time: "01:00 PM" }
+                ];
+                pushStateToCloud();
+                closeResetModal();
+                showNotification("Event database wiped to default successfully.", "success");
+            } else {
+                errorElement.classList.remove('hidden');
+            }
+        }
+
+        function restoreDefaultTeams() {
+            if (!isAdmin) {
+                showNotification("Admin mode required to customize teams.", "error");
+                return;
+            }
+            state.teams = JSON.parse(JSON.stringify(defaultTeams));
+            pushStateToCloud();
+            showNotification("Teams restored to defaults.", "info");
+        }
+
+        // Tab selection logic
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-view').forEach(view => view.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('border-slate-800', 'dark:border-slate-300', 'text-slate-950', 'dark:text-white');
+                btn.classList.add('border-transparent', 'text-slate-400', 'dark:text-slate-500');
+            });
+
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            const targetBtn = document.getElementById(`tab-${tabId}`);
+            targetBtn.classList.remove('border-transparent', 'text-slate-400', 'dark:text-slate-500');
+            targetBtn.classList.add('border-slate-800', 'dark:border-slate-300', 'text-slate-950', 'dark:text-white');
+        }
+
+        function showNotification(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 right-4 z-50 transform translate-y-2 opacity-0 transition-all duration-300 max-w-xs w-full p-3.5 rounded border flex items-center gap-3 shadow-lg`;
+            
+            if (type === 'success') {
+                toast.className += ' bg-white dark:bg-slate-900 border-emerald-200 dark:border-emerald-950 text-slate-800 dark:text-slate-100';
+                toast.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i> <p class="text-[11px] font-medium">${message}</p>`;
+            } else if (type === 'error') {
+                toast.className += ' bg-white dark:bg-slate-900 border-red-200 dark:border-red-950 text-slate-800 dark:text-slate-100';
+                toast.innerHTML = `<i class="fa-solid fa-circle-xmark text-red-500 text-sm"></i> <p class="text-[11px] font-medium">${message}</p>`;
+            } else {
+                toast.className += ' bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100';
+                toast.innerHTML = `<i class="fa-solid fa-circle-info text-blue-500 text-sm"></i> <p class="text-[11px] font-medium">${message}</p>`;
+            }
+
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 50);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        // Standings calculation logic
+        function calculateStandings() {
+            let stats = {};
+            state.teams.forEach(team => {
+                stats[team.id] = {
+                    id: team.id,
+                    name: team.name,
+                    idString: team.idString,
+                    wins: 0, losses: 0, ties: 0,
+                    wp: 0, awp: 0, ap: 0, os: 0,
+                    totalPoints: 0, matchesPlayed: 0
+                };
+            });
+
+            state.quals.forEach(match => {
+                if (match.scoreRed === null || match.scoreBlue === null) return;
+
+                const rScore = parseInt(match.scoreRed);
+                const bScore = parseInt(match.scoreBlue);
+
+                match.red.forEach(tId => { if (stats[tId]) stats[tId].matchesPlayed++; });
+                match.blue.forEach(tId => { if (stats[tId]) stats[tId].matchesPlayed++; });
+
+                match.red.forEach(tId => { if (stats[tId]) stats[tId].os += bScore; });
+                match.blue.forEach(tId => { if (stats[tId]) stats[tId].os += rScore; });
+
+                match.red.forEach(tId => { if (stats[tId]) stats[tId].totalPoints += rScore; });
+                match.blue.forEach(tId => { if (stats[tId]) stats[tId].totalPoints += bScore; });
+
+                if (rScore > bScore) {
+                    match.red.forEach(tId => { if (stats[tId]) { stats[tId].wins++; stats[tId].wp += 2; } });
+                    match.blue.forEach(tId => { if (stats[tId]) stats[tId].losses++; });
+                } else if (bScore > rScore) {
+                    match.blue.forEach(tId => { if (stats[tId]) { stats[tId].wins++; stats[tId].wp += 2; } });
+                    match.red.forEach(tId => { if (stats[tId]) stats[tId].losses++; });
+                } else {
+                    match.red.forEach(tId => { if (stats[tId]) { stats[tId].ties++; stats[tId].wp += 1; } });
+                    match.blue.forEach(tId => { if (stats[tId]) { stats[tId].ties++; stats[tId].wp += 1; } });
+                }
+
+                if (match.redAwp) {
+                    match.red.forEach(tId => { if (stats[tId]) { stats[tId].awp++; stats[tId].wp += 1; } });
+                }
+                if (match.blueAwp) {
+                    match.blue.forEach(tId => { if (stats[tId]) { stats[tId].awp++; stats[tId].wp += 1; } });
+                }
+
+                if (match.autoWinner === 'red') {
+                    match.red.forEach(tId => { if (stats[tId]) stats[tId].ap += 10; });
+                } else if (match.autoWinner === 'blue') {
+                    match.blue.forEach(tId => { if (stats[tId]) stats[tId].ap += 10; });
+                } else if (match.autoWinner === 'tie') {
+                    match.red.forEach(tId => { if (stats[tId]) stats[tId].ap += 5; });
+                    match.blue.forEach(tId => { if (stats[tId]) stats[tId].ap += 5; });
+                }
+            });
+
+            let leaderboard = Object.values(stats);
+            leaderboard.sort((a, b) => {
+                if (b.wp !== a.wp) return b.wp - a.wp;
+                if (b.ap !== a.ap) return b.ap - a.ap;
+                if (b.os !== a.os) return b.os - a.os;
+                return b.totalPoints - a.totalPoints;
+            });
+
+            return leaderboard;
+        }
+
+        function renderAll() {
+            const standings = calculateStandings();
+            
+            updateProgressStats(standings);
+            renderDashboard(standings);
+            renderTeams();
+            renderQualsGrid();
+            renderLeaderboard(standings);
+            renderAllianceAndBracket(standings);
+        }
+
+        function updateProgressStats(standings) {
+            const totalMatches = state.quals.length;
+            const completedMatches = state.quals.filter(m => m.scoreRed !== null).length;
+            const completionPercent = Math.round((completedMatches / totalMatches) * 100);
+
+            document.getElementById('progress-bar').style.width = `${completionPercent}%`;
+            document.getElementById('progress-text').innerText = `${completionPercent}%`;
+            document.getElementById('stat-quals-done').innerText = `${completedMatches}/${totalMatches}`;
+            
+            const leadingTeam = standings[0];
+            const leaderTextElement = document.getElementById('stat-current-leader');
+            if (completedMatches > 0 && leadingTeam) {
+                leaderTextElement.innerText = leadingTeam.name;
+            } else {
+                leaderTextElement.innerText = "-";
+            }
+        }
+
+        function getTeamBadge(id) {
+            const team = state.teams.find(t => t.id === id);
+            if (!team) return `<span class="text-xs text-slate-400 dark:text-slate-600">Empty</span>`;
+            return `<div class="flex items-center space-x-2"><span class="text-[10px] font-mono text-slate-400 dark:text-slate-500">[${team.idString}]</span> <span class="text-xs font-medium text-slate-700 dark:text-slate-300">${team.name}</span></div>`;
+        }
+
+        function renderDashboard(standings) {
+            const activeMatch = state.quals.find(m => m.scoreRed === null) || state.quals[state.quals.length - 1];
+            const activeContainer = document.getElementById('active-match-container');
+            
+            if (activeMatch) {
+                const isPlayed = activeMatch.scoreRed !== null;
+                const redNames = activeMatch.red.map(id => getTeamBadge(id)).join('<div class="text-[9px] text-slate-400 dark:text-slate-600 uppercase">and</div>');
+                const blueNames = activeMatch.blue.map(id => getTeamBadge(id)).join('<div class="text-[9px] text-slate-400 dark:text-slate-600 uppercase">and</div>');
+
+                activeContainer.innerHTML = `
+                    <div class="border border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 p-5 rounded space-y-4 transition-colors">
+                        <div class="flex items-center justify-between text-[10px] uppercase text-slate-400 dark:text-slate-500">
+                            <span>Qual Match ${activeMatch.id}</span>
+                            <span class="font-mono">${activeMatch.time}</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-7 gap-4 items-center">
+                            <!-- Red Side -->
+                            <div class="md:col-span-3 border border-red-100 dark:border-red-950 bg-red-50/30 dark:bg-red-950/5 p-4 rounded flex flex-col items-center justify-center space-y-2 transition-colors">
+                                <span class="text-[9px] font-semibold text-red-600 dark:text-red-500 tracking-wider uppercase">Red Alliance</span>
+                                <div class="text-center space-y-1">${redNames}</div>
+                                ${isPlayed ? `<div class="text-xl font-bold text-slate-800 dark:text-slate-200 mt-2">${activeMatch.scoreRed}</div>` : ''}
+                            </div>
+                            
+                            <div class="md:col-span-1 text-center text-slate-300 dark:text-slate-600 text-xs">VS</div>
+
+                            <!-- Blue Side -->
+                            <div class="md:col-span-3 border border-blue-100 dark:border-blue-950 bg-blue-50/30 dark:bg-blue-950/5 p-4 rounded flex flex-col items-center justify-center space-y-2 transition-colors">
+                                <span class="text-[9px] font-semibold text-blue-600 dark:text-blue-500 tracking-wider uppercase">Blue Alliance</span>
+                                <div class="text-center space-y-1">${blueNames}</div>
+                                ${isPlayed ? `<div class="text-xl font-bold text-slate-800 dark:text-slate-200 mt-2">${activeMatch.scoreBlue}</div>` : ''}
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between border-t border-slate-200 dark:border-slate-900 pt-4 transition-colors">
+                            <span class="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                ${isPlayed ? 'Scored' : 'Pending outcome'}
+                            </span>
+                            ${isAdmin ? `
+                            <button onclick="openScoreModal(${activeMatch.id}, false)" class="bg-slate-800 dark:bg-slate-200 hover:bg-slate-900 dark:hover:white text-white dark:text-slate-950 text-[10px] font-semibold uppercase tracking-wider px-4 py-1.5 rounded transition-all">
+                                ${isPlayed ? 'Modify Scores' : 'Input scores'}
+                            </button>
+                            ` : `
+                            <span class="text-[10px] text-slate-400 dark:text-slate-600 italic">Scores locked</span>
+                            `}
+                        </div>
+                    </div>
+                `;
+            }
+
+            const dashboardLeaderboard = document.getElementById('dashboard-leaderboard');
+            let widgetHtml = '';
+            
+            standings.forEach((team, index) => {
+                widgetHtml += `
+                    <div class="flex items-center justify-between p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-900 rounded transition-colors">
+                        <div class="flex items-center space-x-3">
+                            <span class="text-[11px] font-mono text-slate-400 dark:text-slate-500 w-4">${index + 1}</span>
+                            <div>
+                                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 block">${team.name}</span>
+                                <span class="text-[9px] text-slate-400 dark:text-slate-500 font-mono">${team.idString}</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-mono text-slate-700 dark:text-slate-300 block">${team.wp} WP</span>
+                            <span class="text-[9px] text-slate-400 dark:text-slate-500 block">${team.wins}W-${team.losses}L-${team.ties}T</span>
+                        </div>
+                    </div>
+                `;
+            });
+            dashboardLeaderboard.innerHTML = widgetHtml;
+        }
+
+        function renderTeams() {
+            const grid = document.getElementById('teams-list-grid');
+            let html = '';
+
+            state.teams.forEach(team => {
+                html += `
+                    <div class="border border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 p-4 rounded space-y-4 transition-colors">
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-900 pb-2 transition-colors">
+                            <span class="text-[10px] font-mono text-slate-400 dark:text-slate-500">Slot ${team.id}</span>
+                        </div>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-[9px] uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Display Name</label>
+                                <input type="text" onchange="updateTeamValue('${team.id}', 'name', this.value)" value="${team.name}" ${!isAdmin ? 'disabled' : ''} class="w-full bg-slate-50 dark:bg-slate-900 disabled:opacity-60 border border-slate-200 dark:border-slate-800 rounded py-1 px-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-slate-400 dark:focus:border-slate-500 transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-[9px] uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Identification ID</label>
+                                <input type="text" onchange="updateTeamValue('${team.id}', 'idString', this.value)" value="${team.idString}" ${!isAdmin ? 'disabled' : ''} class="w-full bg-slate-50 dark:bg-slate-900 disabled:opacity-60 border border-slate-200 dark:border-slate-800 rounded py-1 px-2.5 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-slate-400 dark:focus:border-slate-500 transition-colors">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            grid.innerHTML = html;
+        }
+
+        function updateTeamValue(id, key, value) {
+            if (!isAdmin) return;
+            const team = state.teams.find(t => t.id === id);
+            if (team && value.trim() !== '') {
+                team[key] = value.trim();
+                pushStateToCloud();
+                showNotification(`Updated details for Slot ${id}`, "info");
+            }
+        }
+
+        function renderQualsGrid() {
+            const grid = document.getElementById('qual-matches-grid');
+            let html = '';
+
+            state.quals.forEach(match => {
+                const isPlayed = match.scoreRed !== null;
+                const redTeamBadges = match.red.map(id => getTeamBadge(id)).join('<div class="h-px bg-slate-100 dark:bg-slate-900 w-full transition-colors"></div>');
+                const blueTeamBadges = match.blue.map(id => getTeamBadge(id)).join('<div class="h-px bg-slate-100 dark:bg-slate-900 w-full transition-colors"></div>');
+
+                html += `
+                    <div class="border border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 p-4 rounded flex flex-col justify-between space-y-4 transition-colors">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between text-[10px] uppercase text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-900 pb-2 transition-colors">
+                                <span>Qual Match ${match.id}</span>
+                                <span class="font-mono">${match.time}</span>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <!-- Red -->
+                                <div class="border border-red-100 dark:border-red-950 bg-red-50/20 dark:bg-red-950/5 p-3 rounded space-y-2 transition-colors">
+                                    <span class="text-[9px] uppercase text-red-600 dark:text-red-500 block">Red</span>
+                                    <div class="space-y-1">${redTeamBadges}</div>
+                                    ${isPlayed ? `<div class="text-base font-bold text-slate-700 dark:text-slate-300 text-center border-t border-slate-100 dark:border-slate-900/40 pt-2 transition-colors">${match.scoreRed}</div>` : ''}
+                                </div>
+
+                                <!-- Blue -->
+                                <div class="border border-blue-100 dark:border-blue-950 bg-blue-50/20 dark:bg-blue-950/5 p-3 rounded space-y-2 transition-colors">
+                                    <span class="text-[9px] uppercase text-blue-600 dark:text-blue-500 block">Blue</span>
+                                    <div class="space-y-1">${blueTeamBadges}</div>
+                                    ${isPlayed ? `<div class="text-base font-bold text-slate-700 dark:text-slate-300 text-center border-t border-slate-100 dark:border-slate-900/40 pt-2 transition-colors">${match.scoreBlue}</div>` : ''}
+                                </div>
+                            </div>
+                        </div>
+
+                        ${isAdmin ? `
+                        <div class="pt-3 border-t border-slate-100 dark:border-slate-900 flex justify-end transition-colors">
+                            <button onclick="openScoreModal(${match.id}, false)" class="border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:text-slate-800 dark:hover:text-white text-[10px] font-medium uppercase tracking-wider px-3 py-1 rounded transition-colors">
+                                ${isPlayed ? 'Edit Scores' : 'Input score'}
+                            </button>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            grid.innerHTML = html;
+        }
+
+        function renderLeaderboard(standings) {
+            const tbody = document.getElementById('leaderboard-tbody');
+            let html = '';
+
+            if (state.quals.filter(m => m.scoreRed !== null).length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-12 text-slate-400 dark:text-slate-600 text-xs">
+                            Qualifications have not yet commenced. Leaderboard ranks will track live once first scores are saved.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            standings.forEach((team, index) => {
+                html += `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/20 transition-colors">
+                        <td class="p-4 text-center font-mono text-slate-500 dark:text-slate-400">
+                            ${index + 1}
+                        </td>
+                        <td class="p-4 font-medium text-slate-800 dark:text-slate-200">
+                            ${team.name}
+                            <span class="block text-[10px] font-mono text-slate-400 dark:text-slate-500 mt-0.5">${team.idString}</span>
+                        </td>
+                        <td class="p-4 text-center font-mono text-slate-500 dark:text-slate-400">
+                            ${team.wins} - ${team.losses} - ${team.ties}
+                        </td>
+                        <td class="p-4 text-center font-mono text-slate-900 dark:text-white font-semibold">
+                            ${team.wp}
+                        </td>
+                        <td class="p-4 text-center font-mono text-slate-500 dark:text-slate-400">
+                            ${team.awp}
+                        </td>
+                        <td class="p-4 text-center font-mono text-slate-500 dark:text-slate-400">
+                            ${team.ap}
+                        </td>
+                        <td class="p-4 text-center font-mono text-slate-500 dark:text-slate-400">
+                            ${team.os}
+                        </td>
+                        <td class="p-4 text-center font-mono text-slate-400 dark:text-slate-500">
+                            ${team.totalPoints} pts
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function renderAllianceAndBracket(standings) {
+            const allianceContainer = document.getElementById('alliance-setup-container');
+            const bracketContainer = document.getElementById('finals-bracket-container');
+
+            const isQualsFinished = state.quals.filter(m => m.scoreRed !== null).length === state.quals.length;
+
+            if (!state.allianceSelection.completed) {
+                if (!isQualsFinished) {
+                    allianceContainer.innerHTML = `
+                        <div class="text-center py-6 border border-slate-200 dark:border-slate-900 bg-slate-50 dark:bg-slate-950/40 p-4 rounded text-xs space-y-1.5 transition-colors">
+                            <h4 class="font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider text-[10px]">Quals incomplete</h4>
+                            <p class="text-slate-500 dark:text-slate-600">
+                                Complete all 6 scheduled qualification matches to run the selection wizard.
+                            </p>
+                        </div>
+                    `;
+                } else {
+                    const firstSeed = standings[0];
+                    const pickerOptions = standings.slice(1);
+
+                    let optionsHtml = '';
+                    pickerOptions.forEach(team => {
+                        optionsHtml += `
+                            <button onclick="commitAlliance('${firstSeed.id}', '${team.id}')" ${!isAdmin ? 'disabled' : ''} class="w-full bg-slate-50 dark:bg-slate-900 disabled:opacity-50 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 p-3 rounded text-left transition-all flex items-center justify-between group">
+                                <div>
+                                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 block">${team.name}</span>
+                                    <span class="text-[9px] text-slate-400 dark:text-slate-500 block font-mono">${team.idString}</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest group-hover:text-slate-800 dark:group-hover:text-white">Select</span>
+                            </button>
+                        `;
+                    });
+
+                    allianceContainer.innerHTML = `
+                        <div class="space-y-4">
+                            <div class="bg-slate-50 dark:bg-slate-900/60 p-3 rounded text-[11px] leading-relaxed text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-900 transition-colors">
+                                <strong>#1 Seed (${firstSeed.name})</strong> has secured choice picking. Pair them with one available alliance team:
+                            </div>
+                            <div class="space-y-2">
+                                ${optionsHtml}
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                const alliance1 = state.allianceSelection.alliances.find(a => a.id === 1);
+                const alliance2 = state.allianceSelection.alliances.find(a => a.id === 2);
+
+                allianceContainer.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="bg-slate-50 dark:bg-slate-900/20 border border-slate-200 dark:border-slate-900 p-3.5 rounded text-center text-[11px] text-slate-400 dark:text-slate-400 transition-colors">
+                            Alliances are finalized.
+                        </div>
+
+                        <!-- Alliance 1 -->
+                        <div class="bg-slate-50 dark:bg-slate-900/40 p-3.5 rounded border border-slate-200 dark:border-slate-900 space-y-1 transition-colors">
+                            <span class="text-[9px] font-semibold text-slate-400 dark:text-slate-500 uppercase block tracking-widest mb-1.5">Alliance 1</span>
+                            ${getTeamBadge(alliance1.captain)}
+                            ${getTeamBadge(alliance1.partner)}
+                        </div>
+
+                        <!-- Alliance 2 -->
+                        <div class="bg-slate-50 dark:bg-slate-900/40 p-3.5 rounded border border-slate-200 dark:border-slate-900 space-y-1 transition-colors">
+                            <span class="text-[9px] font-semibold text-slate-400 dark:text-slate-500 uppercase block tracking-widest mb-1.5">Alliance 2</span>
+                            ${getTeamBadge(alliance2.captain)}
+                            ${getTeamBadge(alliance2.partner)}
+                        </div>
+
+                        ${isAdmin ? `
+                        <button onclick="clearAlliances()" class="w-full text-slate-400 dark:text-slate-500 hover:text-red-500 hover:dark:text-red-400 text-[10px] uppercase font-medium tracking-wider pt-2 block text-center transition-colors">
+                            Unlock Alliances
+                        </button>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            if (!state.allianceSelection.completed) {
+                bracketContainer.innerHTML = `
+                    <div class="text-center py-12 border border-slate-200 dark:border-slate-900 bg-slate-50 dark:bg-slate-950/40 rounded p-6 transition-colors">
+                        <p class="text-xs text-slate-400 dark:text-slate-600">The bracket will initialize immediately upon completion of alliance pairings.</p>
+                    </div>
+                `;
+            } else {
+                const alliance1 = state.allianceSelection.alliances.find(a => a.id === 1);
+                const alliance2 = state.allianceSelection.alliances.find(a => a.id === 2);
+
+                let matchCardsHtml = '';
+                let alliance1Wins = 0;
+                let alliance2Wins = 0;
+
+                state.finals.forEach(match => {
+                    const isPlayed = match.scoreRed !== null;
+                    let resultBanner = '';
+                    
+                    if (isPlayed) {
+                        const redVal = parseInt(match.scoreRed);
+                        const blueVal = parseInt(match.scoreBlue);
+                        if (redVal > blueVal) {
+                            alliance1Wins++;
+                            resultBanner = `<span class="text-[9px] text-red-600 dark:text-red-500 uppercase font-semibold">Alliance 1 Won</span>`;
+                        } else if (blueVal > redVal) {
+                            alliance2Wins++;
+                            resultBanner = `<span class="text-[9px] text-blue-600 dark:text-blue-500 uppercase font-semibold">Alliance 2 Won</span>`;
+                        } else {
+                            resultBanner = `<span class="text-[9px] text-slate-500 uppercase">Tie</span>`;
+                        }
+                    }
+
+                    matchCardsHtml += `
+                        <div class="border border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950/40 p-4 rounded space-y-4 transition-colors">
+                            <div class="flex items-center justify-between text-[10px] border-b border-slate-100 dark:border-slate-900 pb-2 transition-colors">
+                                <span class="font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">${match.title}</span>
+                                <div class="flex items-center gap-3">
+                                    ${resultBanner}
+                                    <span class="font-mono text-slate-400 dark:text-slate-500">${match.time}</span>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-7 gap-4 items-center">
+                                <div class="md:col-span-3 border border-slate-100 dark:border-slate-900/60 p-3 rounded text-center transition-colors">
+                                    <span class="text-[9px] text-slate-400 dark:text-slate-500 uppercase block mb-1">Alliance 1</span>
+                                    <span class="text-xs text-slate-700 dark:text-slate-300 block">${state.teams.find(t => t.id === alliance1.captain).name}</span>
+                                    <span class="text-xs text-slate-700 dark:text-slate-300 block">${state.teams.find(t => t.id === alliance1.partner).name}</span>
+                                    ${isPlayed ? `<div class="text-base font-bold text-slate-800 dark:text-slate-200 mt-2">${match.scoreRed}</div>` : ''}
+                                </div>
+
+                                <div class="md:col-span-1 text-center text-slate-300 dark:text-slate-600 text-xs">VS</div>
+
+                                <div class="md:col-span-3 border border-slate-100 dark:border-slate-900/60 p-3 rounded text-center transition-colors">
+                                    <span class="text-[9px] text-slate-400 dark:text-slate-500 uppercase block mb-1">Alliance 2</span>
+                                    <span class="text-xs text-slate-700 dark:text-slate-300 block">${state.teams.find(t => t.id === alliance2.captain).name}</span>
+                                    <span class="text-xs text-slate-700 dark:text-slate-300 block">${state.teams.find(t => t.id === alliance2.partner).name}</span>
+                                    ${isPlayed ? `<div class="text-base font-bold text-slate-800 dark:text-slate-200 mt-2">${match.scoreBlue}</div>` : ''}
+                                </div>
+                            </div>
+
+                            ${isAdmin ? `
+                            <div class="flex justify-end">
+                                <button onclick="openScoreModal(${match.id}, true)" class="border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:text-slate-800 dark:hover:text-white text-[10px] font-medium uppercase tracking-wider px-3 py-1 rounded transition-colors">
+                                    Score Match
+                                </button>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+
+                let championHtml = '';
+                if (alliance1Wins >= 2) {
+                    championHtml = `
+                        <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded p-6 text-center space-y-1.5 transition-colors">
+                            <span class="text-[9px] font-semibold tracking-widest text-slate-400 dark:text-slate-500 uppercase">Scrimmage Winner</span>
+                            <h3 class="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-widest">Alliance 1 Champions</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">
+                                ${state.teams.find(t => t.id === alliance1.captain).name} &amp; ${state.teams.find(t => t.id === alliance1.partner).name}
+                            </p>
+                        </div>
+                    `;
+                } else if (alliance2Wins >= 2) {
+                    championHtml = `
+                        <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded p-6 text-center space-y-1.5 transition-colors">
+                            <span class="text-[9px] font-semibold tracking-widest text-slate-400 dark:text-slate-500 uppercase">Scrimmage Winner</span>
+                            <h3 class="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-widest">Alliance 2 Champions</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">
+                                ${state.teams.find(t => t.id === alliance2.captain).name} &amp; ${state.teams.find(t => t.id === alliance2.partner).name}
+                            </p>
+                        </div>
+                    `;
+                }
+
+                bracketContainer.innerHTML = `
+                    <div class="space-y-4">
+                        ${championHtml}
+                        <div class="grid grid-cols-1 gap-4">
+                            ${matchCardsHtml}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function commitAlliance(captainId, partnerId) {
+            if (!isAdmin) return;
+            const allTeamIds = ["A", "B", "C", "D"];
+            const remainingIds = allTeamIds.filter(id => id !== captainId && id !== partnerId);
+
+            state.allianceSelection.alliances = [
+                { id: 1, captain: captainId, partner: partnerId },
+                { id: 2, captain: remainingIds[0], partner: remainingIds[1] }
+            ];
+            state.allianceSelection.completed = true;
+            pushStateToCloud();
+            showNotification("Alliances locked successfully.", "success");
+        }
+
+        function clearAlliances() {
+            if (!isAdmin) return;
+            state.allianceSelection.completed = false;
+            state.allianceSelection.alliances = [];
+            state.finals.forEach(match => {
+                match.scoreRed = null;
+                match.scoreBlue = null;
+                match.autoWinner = null;
+            });
+            pushStateToCloud();
+            showNotification("Playoff configurations unlocked.", "info");
+        }
+
+        let currentModalTargetId = null;
+        let isModalPlayoffs = false;
+        let activeAutoWinner = null;
+
+        function openScoreModal(matchId, isPlayoffMatch = false) {
+            if (!isAdmin) return;
+            currentModalTargetId = matchId;
+            isModalPlayoffs = isPlayoffMatch;
+
+            const targetMatch = isPlayoffMatch 
+                ? state.finals.find(m => m.id === matchId)
+                : state.quals.find(m => m.id === matchId);
+
+            if (!targetMatch) return;
+
+            document.getElementById('modal-match-title').innerText = `${isPlayoffMatch ? 'Finals' : 'Quals'} Match ${matchId} Details`;
+
+            if (isPlayoffMatch) {
+                document.getElementById('modal-red-team-labels').innerText = "Alliance 1";
+                document.getElementById('modal-blue-team-labels').innerText = "Alliance 2";
+            } else {
+                document.getElementById('modal-red-team-labels').innerText = targetMatch.red.join(" & ");
+                document.getElementById('modal-blue-team-labels').innerText = targetMatch.blue.join(" & ");
+            }
+
+            document.getElementById('input-red-score').value = targetMatch.scoreRed !== null ? targetMatch.scoreRed : 0;
+            document.getElementById('input-blue-score').value = targetMatch.scoreBlue !== null ? targetMatch.scoreBlue : 0;
+
+            const redAwpCheckbox = document.getElementById('input-red-awp');
+            const blueAwpCheckbox = document.getElementById('input-blue-awp');
+            
+            if (isPlayoffMatch) {
+                redAwpCheckbox.disabled = true;
+                blueAwpCheckbox.disabled = true;
+                redAwpCheckbox.checked = false;
+                blueAwpCheckbox.checked = false;
+            } else {
+                redAwpCheckbox.disabled = false;
+                blueAwpCheckbox.disabled = false;
+                redAwpCheckbox.checked = targetMatch.redAwp || false;
+                blueAwpCheckbox.checked = targetMatch.blueAwp || false;
+            }
+
+            setModalAutoWinner(targetMatch.autoWinner);
+
+            document.getElementById('modal-save-btn').onclick = saveModalResults;
+            document.getElementById('modal-clear-match-btn').onclick = clearModalResults;
+
+            const scoreModal = document.getElementById('score-modal');
+            scoreModal.classList.remove('hidden');
+            scoreModal.classList.add('flex');
+        }
+
+        function closeScoreModal() {
+            const scoreModal = document.getElementById('score-modal');
+            scoreModal.classList.add('hidden');
+            scoreModal.classList.remove('flex');
+            currentModalTargetId = null;
+        }
+
+        function setModalAutoWinner(winner) {
+            activeAutoWinner = winner;
+
+            const btnRed = document.getElementById('auto-btn-red');
+            const btnBlue = document.getElementById('auto-btn-blue');
+            const btnTie = document.getElementById('auto-btn-tie');
+
+            const normalClasses = "border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-600 dark:text-slate-400 py-1.5 rounded text-[10px] font-medium tracking-wide transition-colors";
+            btnRed.className = normalClasses;
+            btnBlue.className = normalClasses;
+            btnTie.className = normalClasses;
+
+            if (winner === 'red') {
+                btnRed.className = "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-950 font-semibold py-1.5 rounded text-[10px] tracking-wide transition-colors";
+            } else if (winner === 'blue') {
+                btnBlue.className = "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-950 font-semibold py-1.5 rounded text-[10px] tracking-wide transition-colors";
+            } else if (winner === 'tie') {
+                btnTie.className = "bg-slate-500 text-white font-semibold py-1.5 rounded text-[10px] tracking-wide transition-colors";
+            }
+        }
+
+        function saveModalResults() {
+            if (!isAdmin) return;
+            const targetMatch = isModalPlayoffs 
+                ? state.finals.find(m => m.id === currentModalTargetId)
+                : state.quals.find(m => m.id === currentModalTargetId);
+
+            if (!targetMatch) return;
+
+            const redVal = parseInt(document.getElementById('input-red-score').value);
+            const blueVal = parseInt(document.getElementById('input-blue-score').value);
+
+            if (isNaN(redVal) || isNaN(blueVal) || redVal < 0 || blueVal < 0) {
+                showNotification("Invalid scores. Positive numerical input only.", "error");
+                return;
+            }
+
+            targetMatch.scoreRed = redVal;
+            targetMatch.scoreBlue = blueVal;
+            targetMatch.autoWinner = activeAutoWinner;
+
+            if (!isModalPlayoffs) {
+                targetMatch.redAwp = document.getElementById('input-red-awp').checked;
+                targetMatch.blueAwp = document.getElementById('input-blue-awp').checked;
+            }
+
+            pushStateToCloud();
+            closeScoreModal();
+            showNotification("Match scores finalized.", "success");
+        }
+
+        function clearModalResults() {
+            if (!isAdmin) return;
+            const targetMatch = isModalPlayoffs 
+                ? state.finals.find(m => m.id === currentModalTargetId)
+                : state.quals.find(m => m.id === currentModalTargetId);
+
+            if (!targetMatch) return;
+
+            targetMatch.scoreRed = null;
+            targetMatch.scoreBlue = null;
+            targetMatch.autoWinner = null;
+
+            if (!isModalPlayoffs) {
+                targetMatch.redAwp = false;
+                targetMatch.blueAwp = false;
+            }
+
+            pushStateToCloud();
+            closeScoreModal();
+            showNotification("Scores wiped cleanly.", "info");
+        }
+
+        // Exposing modular actions to window layout globals
+        window.toggleTheme = toggleTheme;
+        window.openResetModal = openResetModal;
+        window.closeResetModal = closeResetModal;
+        window.submitReset = submitReset;
+        window.restoreDefaultTeams = restoreDefaultTeams;
+        window.switchTab = switchTab;
+        window.commitAlliance = commitAlliance;
+        window.clearAlliances = clearAlliances;
+        window.openScoreModal = openScoreModal;
+        window.closeScoreModal = closeScoreModal;
+        window.setModalAutoWinner = setModalAutoWinner;
+        window.updateTeamValue = updateTeamValue;
+        window.openAdminModal = openAdminModal;
+        window.closeAdminModal = closeAdminModal;
+        window.submitAdminLogin = submitAdminLogin;
+        window.logoutAdmin = logoutAdmin;
+
+        // Run theme checks
+        const savedTheme = localStorage.getItem("vex_theme") || 'dark';
+        state.theme = savedTheme;
+        applyTheme(savedTheme);
+        checkAdminSession();
+    </script>
+</body>
+</html>
