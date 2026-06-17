@@ -436,9 +436,7 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'vex-scrimmage-bd';
         
         // Use provided configuration dynamically or fallback to local memory config if testing locally
-        const firebaseConfig = typeof __firebase_config !== 'undefined' 
-            ? JSON.parse(__firebase_config) 
-            : {
+        const firebaseConfig = {
                 apiKey: "AIzaSyBePS6s_YylwRPo__YYiLFISgfRqCpln-I",
                 authDomain: "vexscrimmagehubbdnc.firebaseapp.com",
                 projectId: "vexscrimmagehubbdnc",
